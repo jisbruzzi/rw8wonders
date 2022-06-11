@@ -8,11 +8,106 @@ generator client {
   binaryTargets = "native"
 }
 
-// Define your own datamodels here and run `yarn redwood prisma migrate dev`
-// to create migrations for them and apply to your dev DB.
-// TODO: Please remove the following example:
-model UserExample {
-  id    Int     @id @default(autoincrement())
-  email String  @unique
-  name  String?
+model Card {
+  id                     Int             @id @default(autoincrement())
+  name                   String
+  color                  Color           @relation(fields: [colorId], references: [id])
+  colorId                Int
+  effects                CardEffectMap[]
+  unlocks                UnlockIcon?     @relation(fields: [unlocksUnlockIconId], references: [id], "unlocks")
+  unlockedBy             UnlockIcon?     @relation(fields: [unlockedByUnlockIconId], references: [id], "unlockedBy")
+  unlocksUnlockIconId    Int?
+  unlockedByUnlockIconId Int?
+}
+
+model UnlockIcon {
+  id          Int    @id @default(autoincrement())
+  name        String
+  unlocksCard Card[] @relation("unlocks")
+  unlockedBy  Card[] @relation("unlockedBy")
+}
+
+model Color {
+  id                    Int                     @id @default(autoincrement())
+  name                  String
+  code                  String
+  description           String
+  Card                  Card[]
+  ComplexEffectColorMap ComplexEffectColorMap[]
+}
+
+model CardEffectMap {
+  Card     Card   @relation(fields: [cardId], references: [id])
+  cardId   Int
+  effect   Effect @relation(fields: [effectId], references: [id])
+  effectId Int
+
+  @@id([cardId, effectId])
+}
+
+model Effect {
+  id                 Int                  @id @default(autoincrement())
+  CardEffect         CardEffectMap[]
+  ProductionEffect   ProductionEffect[]
+  ProduceOneOfEffect ProduceOneOfEffect[]
+  TradeOneEffect     TradeOneEffect[]
+  ComplexEffect      ComplexEffect[]
+}
+
+model Unit {
+  id                    Int                     @id @default(autoincrement())
+  name                  String
+  description           String
+  ProductionEffect      ProductionEffect[]
+  ProduceOneOfEffect    ProduceOneOfEffect[]
+  UnitTradeOneEffectMap UnitTradeOneEffectMap[]
+}
+
+model ProductionEffect {
+  effect   Effect @relation(fields: [effectId], references: [id])
+  effectId Int    @id
+  produced Unit   @relation(fields: [unitId], references: [id])
+  unitId   Int
+  quantity Int
+}
+
+model ProduceOneOfEffect {
+  effect   Effect @relation(fields: [effectId], references: [id])
+  effectId Int    @id
+  produced Unit   @relation(fields: [unitId], references: [id])
+  unitId   Int
+}
+
+model TradeOneEffect {
+  effect   Effect                  @relation(fields: [effectId], references: [id])
+  effectId Int                     @id
+  traded   UnitTradeOneEffectMap[]
+}
+
+model UnitTradeOneEffectMap {
+  TradeOneEffect         TradeOneEffect @relation(fields: [tradeOneEffectEffectId], references: [effectId])
+  tradeOneEffectEffectId Int
+  Unit                   Unit           @relation(fields: [unitId], references: [id])
+  unitId                 Int
+
+  @@id([tradeOneEffectEffectId, unitId])
+}
+
+model ComplexEffect {
+  effect             Effect                  @relation(fields: [effectId], references: [id])
+  effectId           Int                     @id
+  coinsNow           Int
+  victoryPointsLater Int
+  over               String
+  selectorColors     ComplexEffectColorMap[]
+  selectorExtra      String?
+}
+
+model ComplexEffectColorMap {
+  ComplexEffect         ComplexEffect @relation(fields: [complexEffectEffectId], references: [effectId])
+  complexEffectEffectId Int
+  Color                 Color         @relation(fields: [colorId], references: [id])
+  colorId               Int
+
+  @@id([complexEffectEffectId, colorId])
 }
